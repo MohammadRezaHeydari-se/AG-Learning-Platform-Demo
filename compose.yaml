@@ -2,7 +2,7 @@ services:
   web:
     build: .
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:${HOST_PORT:-8000}:8000"
     environment:
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-local-demo-only-change-me}
       DJANGO_DEBUG: "true"

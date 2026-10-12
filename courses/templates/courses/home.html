@@ -1,17 +1,45 @@
 {% extends "courses/base.html" %}
 
-{% block title %}Home - AG Learning Platform Demo{% endblock %}
+{% block title %}Home · AG Learning Platform Demo{% endblock %}
 
 {% block content %}
-<h1>AG Learning Platform Demo</h1>
-<p>A small portfolio demo of a role-based learning platform.</p>
+<section class="hero">
+  <div class="container hero__inner">
+    <p class="hero__eyebrow">Django · Role-based access</p>
+    <h1 class="hero__title">A simple, secure learning platform</h1>
+    <p class="hero__text">
+      A small portfolio demo with Admin, Teacher and Student roles, course
+      enrollments and ordered lessons.
+    </p>
+    <div class="hero__actions">
+      <a class="btn btn--primary" href="{% url 'login' %}">Log in to your dashboard</a>
+      <a class="btn btn--ghost" href="#courses">Browse courses</a>
+    </div>
+  </div>
+</section>
 
-<h2>Published courses</h2>
-<ul>
-  {% for course in courses %}
-    <li>{{ course.title }}</li>
-  {% empty %}
-    <li>No published courses yet.</li>
-  {% endfor %}
-</ul>
+<section id="courses" class="section container" aria-labelledby="courses-heading">
+  <div class="section__head">
+    <h2 id="courses-heading" class="section__title">Published courses</h2>
+    <p class="section__subtitle">A preview of the catalog. Sign in to open the lessons.</p>
+  </div>
+
+  {% if courses %}
+    <div class="card-grid">
+      {% for course in courses %}
+        <article class="course-card">
+          <h3 class="course-card__title">{{ course.title }}</h3>
+          <p class="course-card__text">{{ course.description|default:"No description provided." }}</p>
+          <div class="course-card__footer">
+            <span class="badge badge--published">Published</span>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <p>No published courses yet.</p>
+    </div>
+  {% endif %}
+</section>
 {% endblock %}

@@ -1,20 +1,41 @@
 {% extends "courses/base.html" %}
 
-{% block title %}{{ course.title }} - Lessons{% endblock %}
+{% block title %}{{ course.title }} · Lessons{% endblock %}
 
 {% block content %}
-<h1>{{ course.title }}</h1>
-<p><a href="{% url 'dashboard' %}">Back to dashboard</a></p>
+<section class="section container">
+  <div class="page-head">
+    <div>
+      <p class="page-head__eyebrow"><a href="{% url 'dashboard' %}">← Back to dashboard</a></p>
+      <h1 class="page-head__title">{{ course.title }}</h1>
+      <p class="page-head__text">{{ course.description|default:"No description provided." }}</p>
+    </div>
+    {% if course.published %}
+      <span class="badge badge--published">Published</span>
+    {% else %}
+      <span class="badge badge--draft">Draft</span>
+    {% endif %}
+  </div>
 
-<ol>
-  {% for lesson in lessons %}
-    <li>
-      <strong>{{ lesson.title }}</strong>
-      {% if not lesson.published %}<em>(unpublished)</em>{% endif %}
-      <p>{{ lesson.content }}</p>
-    </li>
-  {% empty %}
-    <li>No lessons available for this course.</li>
-  {% endfor %}
-</ol>
+  {% if lessons %}
+    <ol class="lesson-list">
+      {% for lesson in lessons %}
+        <li class="lesson">
+          <span class="lesson__index" aria-hidden="true">{{ forloop.counter }}</span>
+          <div class="lesson__body">
+            <h2 class="lesson__title">
+              {{ lesson.title }}
+              {% if not lesson.published %}<span class="badge badge--draft">Draft</span>{% endif %}
+            </h2>
+            <p class="lesson__content">{{ lesson.content|default:"No content yet." }}</p>
+          </div>
+        </li>
+      {% endfor %}
+    </ol>
+  {% else %}
+    <div class="empty-state">
+      <p>No lessons available for this course.</p>
+    </div>
+  {% endif %}
+</section>
 {% endblock %}

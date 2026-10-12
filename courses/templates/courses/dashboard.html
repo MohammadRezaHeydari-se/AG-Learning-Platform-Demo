@@ -1,24 +1,55 @@
 {% extends "courses/base.html" %}
 
-{% block title %}Dashboard - AG Learning Platform Demo{% endblock %}
+{% block title %}Dashboard · AG Learning Platform Demo{% endblock %}
 
 {% block content %}
-<h1>Dashboard</h1>
-<p>Signed in as <strong>{{ user.get_username }}</strong>{% if role %} ({{ role }}){% endif %}.</p>
+<section class="section container">
+  <div class="page-head">
+    <div>
+      <p class="page-head__eyebrow">Dashboard</p>
+      <h1 class="page-head__title">Welcome, {{ user.get_username }}</h1>
+      <p class="page-head__text">
+        {% if role %}
+          You are signed in as a <strong>{{ role }}</strong>.
+        {% else %}
+          Your account does not have a role yet.
+        {% endif %}
+      </p>
+    </div>
+    {% if role %}<span class="role-pill role-pill--{{ role|lower }}">{{ role }}</span>{% endif %}
+  </div>
 
-{% if role %}
-  <h2>Your courses</h2>
-  <ul>
-    {% for course in courses %}
-      <li>
-        <a href="{% url 'course-lessons' course.id %}">{{ course.title }}</a>
-        {% if not course.published %}<em>(unpublished)</em>{% endif %}
-      </li>
-    {% empty %}
-      <li>No courses available for your role yet.</li>
-    {% endfor %}
-  </ul>
-{% else %}
-  <p>Your account has no assigned role. Ask an administrator for access.</p>
-{% endif %}
+  {% if role %}
+    <h2 class="section__title">Your courses</h2>
+
+    {% if courses %}
+      <div class="card-grid">
+        {% for course in courses %}
+          <article class="course-card">
+            <h3 class="course-card__title">
+              <a href="{% url 'course-lessons' course.id %}">{{ course.title }}</a>
+            </h3>
+            <p class="course-card__text">{{ course.description|default:"No description provided." }}</p>
+            <div class="course-card__footer">
+              {% if course.published %}
+                <span class="badge badge--published">Published</span>
+              {% else %}
+                <span class="badge badge--draft">Draft</span>
+              {% endif %}
+              <a class="btn btn--primary btn--sm" href="{% url 'course-lessons' course.id %}">View lessons</a>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p>No courses available for your role yet.</p>
+      </div>
+    {% endif %}
+  {% else %}
+    <div class="empty-state">
+      <p>Your account has no assigned role. Ask an administrator for access.</p>
+    </div>
+  {% endif %}
+</section>
 {% endblock %}
