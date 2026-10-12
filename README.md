@@ -7,6 +7,18 @@ responsive UI.
 > **not production-ready**, and it contains no real secrets, customer data or
 > private production code.
 
+## Relationship to Automationsguiden LMS
+
+- **Automationsguiden** is a live Swedish learning platform focused on industrial
+  automation and technical education.
+- Its general LMS concept includes structured courses, educational content, and
+  learning workflows.
+- The production codebase and infrastructure repositories remain **private**.
+- This public demo is an **independent implementation**, intentionally simplified,
+  and it uses **fictional data**.
+- It is **not** a production source-code release, an exact replica, or a complete
+  feature inventory of the production platform.
+
 ## Quick Start
 
 The launcher checks Docker, picks a free local port, starts the stack, waits
@@ -100,25 +112,49 @@ docker compose down
 This stops the service and **keeps** your data (the named volume). Only add `-v`
 if you deliberately want to erase the demo database and start fresh.
 
-## What this is
-
-A minimal, readable example of:
-
-- Django's built-in authentication (login, logout, sessions, hashed passwords).
-- Three roles — **Admin**, **Teacher**, **Student** — using Django users and groups.
-- Server-side permissions: only authorized users can read course lessons.
-- Idempotent demo data seeding and a passing test suite with CI.
-
 ## Features
 
-- Public homepage with a course catalog and hero.
-- Secure login/logout (logout is POST + CSRF protected).
-- Role-based dashboards.
-- Courses with an assigned teacher, student enrollments and ordered lessons.
-- Lessons API: `GET /api/courses/` (published courses, JSON).
-- Responsive, accessible UI with original CSS (no framework or CDN).
+A minimal, readable example of the following capabilities, using only what is
+verified in this repository:
 
-## Architecture
+- Django authentication (login, logout, sessions, hashed passwords) with
+  role-based access control.
+- Three roles: **Admin**, **Teacher**, and **Student** (Django users and groups).
+- Courses with an assigned teacher, ordered lessons, and student enrollments.
+- Role-based dashboards for each role.
+- Server-side permissions and published-content visibility: students see
+  published lessons only, while teachers and admins see all lessons in the
+  courses they own or administer.
+- Public JSON API: `GET /api/courses/` lists published courses.
+- Idempotent, fictional demo-data seeding (safe to re-run).
+- Docker Compose local setup with SQLite and a named volume.
+- One-command launchers for Linux/macOS (`start.sh`) and Windows PowerShell
+  (`start.ps1`).
+- Automated tests and GitHub Actions CI.
+- Public homepage with a course catalog, responsive layout, and original CSS
+  (no framework or CDN).
+
+## Demo Architecture
+
+This is the architecture of the **public demo** only. It is not the production
+architecture of Automationsguiden.
+
+```mermaid
+flowchart TD
+    Browser["Local browser<br/>http://127.0.0.1:8000"] -->|HTTP| Django
+
+    subgraph Compose["Docker Compose — local demo stack"]
+        Django["Django application<br/>views, templates, admin"]
+        Django --> Auth["Authentication and role permissions<br/>Admin / Teacher / Student"]
+        Django --> DB[("SQLite database<br/>named volume: demo_data")]
+    end
+
+    CI["GitHub Actions CI<br/>check, tests, migration check"] -.->|validates on push / PR| Django
+```
+
+Stack: Django 5.2, SQLite, server-rendered templates. No JavaScript build step.
+
+### Project layout
 
 ```
 config/       Django settings, URLconf, WSGI
@@ -133,8 +169,6 @@ start.ps1     one-command launcher (Windows PowerShell)
 tests/        launcher tests
 .github/      GitHub Actions CI
 ```
-
-Stack: Django 5.2, SQLite, server-rendered templates. No JavaScript build step.
 
 ### Roles
 
@@ -205,6 +239,20 @@ looks like a password or secret key masked). Use that output first.
   password was changed, sign in with the new one, or set an admin password with
   `python manage.py changepassword demo_admin`.
 - **`permission denied` with Docker on Linux:** make sure your user can run Docker.
+
+## Ongoing Engineering Improvements
+
+Ongoing areas of work in this demo. These are in progress, not completed
+certifications, audits, or verified production outcomes.
+
+- **Performance and maintainability** — keeping the code small and readable,
+  reducing duplication, and reviewing query and page performance.
+- **Security reviews and hardening** — reviewing authentication, permissions,
+  input handling, and dependency updates.
+- **Reliability and troubleshooting** — improving the launcher, error reporting,
+  and recovery paths.
+- **Deployment and automation** — refining Docker and CI workflows and exploring
+  simple, reproducible deployment options.
 
 ## Limitations
 
