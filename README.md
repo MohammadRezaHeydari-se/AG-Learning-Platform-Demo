@@ -188,8 +188,11 @@ pip install -r requirements.txt
 cp .env.example .env
 python manage.py migrate
 python manage.py seed_demo
-python manage.py runserver
+DJANGO_DEBUG=true python manage.py runserver
 ```
+
+`DJANGO_DEBUG=true` is needed here so Django serves the static files during local
+development, since the default is `DEBUG=false`.
 
 ## Tests
 
@@ -211,11 +214,20 @@ dependencies, `check`, `test`, then `makemigrations --check --dry-run`.
 
 ## Security notes
 
-- Development only: Django's development server, SQLite, no HTTPS.
+- Local development demo: Django's development server, SQLite, no HTTPS.
 - The service is published on `127.0.0.1` only.
-- `DJANGO_SECRET_KEY` and the `DEMO_*_PASSWORD` values are placeholders for local
-  use. Never reuse them in production.
-- `.env` and databases are git-ignored; only `.env.example` is committed.
+- `DEBUG` defaults to **false**. Enable it only for local development by setting
+  `DJANGO_DEBUG=true` (in `.env` or on the command line).
+- No secret is committed. `DJANGO_SECRET_KEY` is optional; if unset, a strong key
+  is generated on first run and persisted on the `demo_data` volume
+  (`/app/data/django_secret_key`), so it survives restarts and is never printed
+  to the terminal. The `DEMO_*_PASSWORD` values are fictional placeholders for
+  local use — never reuse them in production.
+- The container runs as an unprivileged user with `no-new-privileges` and all
+  Linux capabilities dropped except the minimum needed to fix volume ownership
+  and drop privileges at startup.
+- `.env`, the generated secret key and databases are git-ignored; only
+  `.env.example` is committed.
 
 ## Troubleshooting
 

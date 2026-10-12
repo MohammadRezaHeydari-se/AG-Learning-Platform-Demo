@@ -4,18 +4,33 @@ services:
     ports:
       - "127.0.0.1:${HOST_PORT:-8000}:8000"
     environment:
-      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-local-demo-only-change-me}
-      DJANGO_DEBUG: "true"
+      # DEBUG defaults to false. For local development set DJANGO_DEBUG=true
+      # (for example in .env or on the command line).
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-false}
       DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1"
       DATABASE_PATH: /app/data/db.sqlite3
+      # Generated once and persisted on the demo_data volume; never committed.
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-}
+      DJANGO_SECRET_KEY_FILE: /app/data/django_secret_key
       DEMO_ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD:-demo-admin-pass}
       DEMO_TEACHER_PASSWORD: ${DEMO_TEACHER_PASSWORD:-demo-teacher-pass}
       DEMO_STUDENT_PASSWORD: ${DEMO_STUDENT_PASSWORD:-demo-student-pass}
     volumes:
       - demo_data:/app/data
+    # Run the application as an unprivileged user with least privilege. The
+    # entrypoint needs CHOWN/SETUID/SETGID only to fix volume ownership and drop
+    # privileges on startup; the Django process itself runs without them.
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
     command: >
       sh -c "python manage.py migrate &&
              python manage.py seed_demo &&
-             python manage.py runserver 0.0.0.0:8000"
+             python manage.py runserver 0.0.0.0:8000 --insecure --noreload"
 volumes:
   demo_data:

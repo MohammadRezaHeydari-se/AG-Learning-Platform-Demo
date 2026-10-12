@@ -4,6 +4,7 @@ __pycache__/
 .env
 .env.*
 !.env.example
+.django_secret_key
 db.sqlite3
 *.sqlite3
 *.sqlite3-journal
