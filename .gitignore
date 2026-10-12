@@ -6,8 +6,11 @@ __pycache__/
 !.env.example
 db.sqlite3
 *.sqlite3
+*.sqlite3-journal
 .pytest_cache/
 .coverage
 htmlcov/
 staticfiles/
 media/
+*.log
+.DS_Store

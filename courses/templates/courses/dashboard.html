@@ -1,0 +1,24 @@
+{% extends "courses/base.html" %}
+
+{% block title %}Dashboard - AG Learning Platform Demo{% endblock %}
+
+{% block content %}
+<h1>Dashboard</h1>
+<p>Signed in as <strong>{{ user.get_username }}</strong>{% if role %} ({{ role }}){% endif %}.</p>
+
+{% if role %}
+  <h2>Your courses</h2>
+  <ul>
+    {% for course in courses %}
+      <li>
+        <a href="{% url 'course-lessons' course.id %}">{{ course.title }}</a>
+        {% if not course.published %}<em>(unpublished)</em>{% endif %}
+      </li>
+    {% empty %}
+      <li>No courses available for your role yet.</li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>Your account has no assigned role. Ask an administrator for access.</p>
+{% endif %}
+{% endblock %}

@@ -1,4 +1,17 @@
+from django.contrib.auth import views as auth_views
 from django.urls import path
-from .views import course_list
 
-urlpatterns = [path('api/courses/', course_list, name='course-list')]
+from . import views
+
+urlpatterns = [
+    path('', views.home, name='home'),
+    path('dashboard/', views.dashboard, name='dashboard'),
+    path('courses/<int:course_id>/lessons/', views.course_lessons, name='course-lessons'),
+    path('api/courses/', views.course_list, name='course-list'),
+    path(
+        'login/',
+        auth_views.LoginView.as_view(template_name='registration/login.html'),
+        name='login',
+    ),
+    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+]

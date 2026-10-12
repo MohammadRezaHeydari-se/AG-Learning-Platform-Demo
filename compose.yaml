@@ -1,0 +1,21 @@
+services:
+  web:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-local-demo-only-change-me}
+      DJANGO_DEBUG: "true"
+      DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1"
+      DATABASE_PATH: /app/data/db.sqlite3
+      DEMO_ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD:-demo-admin-pass}
+      DEMO_TEACHER_PASSWORD: ${DEMO_TEACHER_PASSWORD:-demo-teacher-pass}
+      DEMO_STUDENT_PASSWORD: ${DEMO_STUDENT_PASSWORD:-demo-student-pass}
+    volumes:
+      - demo_data:/app/data
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py seed_demo &&
+             python manage.py runserver 0.0.0.0:8000"
+volumes:
+  demo_data:

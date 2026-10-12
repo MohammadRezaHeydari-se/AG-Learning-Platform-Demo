@@ -1,0 +1,17 @@
+{% extends "courses/base.html" %}
+
+{% block title %}Home - AG Learning Platform Demo{% endblock %}
+
+{% block content %}
+<h1>AG Learning Platform Demo</h1>
+<p>A small portfolio demo of a role-based learning platform.</p>
+
+<h2>Published courses</h2>
+<ul>
+  {% for course in courses %}
+    <li>{{ course.title }}</li>
+  {% empty %}
+    <li>No published courses yet.</li>
+  {% endfor %}
+</ul>
+{% endblock %}
