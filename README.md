@@ -1,31 +1,60 @@
 # AG Learning Platform Demo
 
-A small Django learning-management demo with roles, courses, lessons and a clean
-responsive UI.
+A small, self-contained **Django learning-management system (LMS)** demo:
+authentication with three roles, courses with ordered lessons, student
+enrollments, role-based dashboards, and a public JSON API. It runs locally with
+**Docker Compose** on **SQLite**.
 
-> **Local development only.** This is a portfolio demo. Data is fictional, it is
-> **not production-ready**, and it contains no real secrets, customer data or
-> private production code.
+It is also a hands-on **DevOps portfolio project**: containerisation, a GitHub
+Actions CI pipeline, automated tests, dependency-vulnerability scanning,
+least-privilege container execution, healthchecks and resource limits, and
+reproducible pinning of dependencies, the base image and CI actions.
 
-## Relationship to Automationsguiden LMS
+> **Disclaimer.** This is an independent, public demo. All data is fictional, it
+> runs **locally only**, and it is **not production-ready**. It contains no real
+> secrets, customer data, or private production code, and it is not a
+> source-code release of any commercial product. Do not deploy it as-is.
 
-- **Automationsguiden** is a live Swedish learning platform focused on industrial
-  automation and technical education.
-- Its general LMS concept includes structured courses, educational content, and
-  learning workflows.
-- The production codebase and infrastructure repositories remain **private**.
-- This public demo is an **independent implementation**, intentionally simplified,
-  and it uses **fictional data**.
-- It is **not** a production source-code release, an exact replica, or a complete
-  feature inventory of the production platform.
+## Technologies and demonstrated skills
+
+| Area | Technologies and demonstrated practice |
+| --- | --- |
+| Language / framework | Python 3.12, Django 5.2 (ORM, auth, admin, sessions) |
+| Linux / shell | POSIX `sh` launcher, Linux-first Docker workflow |
+| Containers | Docker, Docker Compose v2, digest-pinned base image |
+| CI/CD | GitHub Actions, three jobs, SHA-pinned actions, `contents: read` |
+| Testing | Django test suite (23 tests) and a launcher suite using a mocked Docker CLI |
+| Security | Non-root container, dropped capabilities, `no-new-privileges`, `pip-audit`, Dependabot, no committed secrets |
+| Reliability | Healthcheck, restart policy, graceful shutdown, CPU/memory/PID and log limits |
+| Reproducibility | Pinned Python dependencies, digest-pinned image, SHA-pinned actions |
+| Operations | One-command launchers with scripted diagnostics and secret redaction |
+
+## Demo architecture
+
+Architecture of the **public demo only**.
+
+```mermaid
+flowchart LR
+    B["Browser<br/>http://127.0.0.1:8000"] -->|HTTP| W["Django app<br/>roles: Admin / Teacher / Student"]
+    W --> DB[("SQLite<br/>named volume: demo_data")]
+
+    subgraph CI["GitHub Actions CI (ubuntu-24.04)"]
+        direction TB
+        T["test - Django tests + migration check"]
+        A["audit - pip-audit dependency scan"]
+        D["docker - build, healthcheck, HTTP, non-root, limits"]
+    end
+```
+
+Stack: Django 5.2, SQLite, server-rendered templates, original CSS. No JavaScript
+build step and no frontend framework or CDN.
 
 ## Quick Start
 
-The launcher checks Docker, picks a free local port, starts the stack, waits
-until it is actually reachable, and prints the URL and the demo logins.
-
-> The launcher never installs Docker and never deletes data. It only starts
-> (or reuses) the local container. Press `Ctrl+C` at any time to stop it safely.
+Requirements: Docker Engine and Docker Compose v2. The launcher checks Docker,
+picks a free local port, starts the stack, waits until it is actually reachable,
+and prints the URL and demo logins. It never installs software and never deletes
+data; `Ctrl+C` stops it safely.
 
 **Linux / macOS**
 
@@ -35,7 +64,7 @@ cd AG-Learning-Platform-Demo
 ./start.sh
 ```
 
-**Windows (PowerShell)**
+**Windows (PowerShell 5.1+ or PowerShell 7+, no WSL required)**
 
 ```powershell
 git clone https://github.com/MohammadRezaHeydari-se/AG-Learning-Platform-Demo.git
@@ -43,143 +72,21 @@ cd AG-Learning-Platform-Demo
 powershell -ExecutionPolicy Bypass -File .\start.ps1
 ```
 
-Both launchers publish the service on `127.0.0.1` only and prefer port **8000**,
-falling back to the next free port when it is busy. Either way you can open:
-
-- Home: **http://127.0.0.1:8000/** (the launcher prints the exact URL)
-- Login: **http://127.0.0.1:8000/login/**
-
-The container runs migrations and seeds the demo data automatically on first
-start. It can take a few seconds to become ready.
-
-### What the launcher shows
-
-Both launchers walk through a numbered checklist and a live progress bar whose
-percentage is the share of setup steps actually completed (never a time
-estimate). Each step is tagged:
-
-| Tag | Meaning |
-| --- | --- |
-| `[OK]` | Step completed (for example, Docker detected). |
-| `[RUNNING]` | Step in progress (for example, building or waiting). |
-| `[SKIP]` | Step not needed because something was reused. |
-| `[ERROR]` | Step failed; the launcher then prints the cause and next step. |
-
-Steps: Docker CLI, Docker Engine, Compose v2, existing container/image, port
-selection, image build, container start, migrations/seeding, HTTP readiness.
-The bar only reaches **100%** once the app actually answers over HTTP.
-
-- If the demo is already running you will see
-  `Existing AG Learning Platform container detected.` and
-  `Reusing existing container — no rebuild or dependency installation needed.`
-- On a first run the Python dependencies are installed **inside the Docker
-  image**, not on your host OS, and the Docker build output is streamed live.
-- Console output is plain (no colour or control characters) when the output is
-  redirected or when `NO_COLOR` is set, so it stays readable in CI logs.
+Both launchers publish the service on `127.0.0.1` only, prefer port **8000**, and
+fall back to the next free port when it is busy. Open the URL the launcher prints
+(for example **http://127.0.0.1:8000/**, login at **/login/**). The container runs
+migrations and seeds the fictional demo data on first start, so the first run can
+take a few seconds to become ready.
 
 ### Manual start (Docker Compose)
 
-If you prefer to run Docker directly:
-
 ```bash
-docker compose up --build -d
+docker compose up --build -d     # set HOST_PORT=8001 to publish elsewhere
+docker compose down              # stop; keeps the named volume and your data
+docker compose down -v           # stop and erase the demo database
 ```
 
-Set `HOST_PORT` to publish on a different local port (default `8000`):
-
-```bash
-HOST_PORT=8001 docker compose up --build -d
-```
-
-## Demo logins
-
-| Role | Username | Password |
-| --- | --- | --- |
-| Admin | `demo_admin` | `demo-admin-pass` |
-| Teacher | `demo_teacher` | `demo-teacher-pass` |
-| Student | `demo_student` | `demo-student-pass` |
-
-These passwords are applied **when the demo accounts are first created**. If you
-have run this demo before and changed a password, the existing account keeps the
-password you set — that is expected.
-
-## Stop the demo
-
-```bash
-docker compose down
-```
-
-This stops the service and **keeps** your data (the named volume). Only add `-v`
-if you deliberately want to erase the demo database and start fresh.
-
-## Features
-
-A minimal, readable example of the following capabilities, using only what is
-verified in this repository:
-
-- Django authentication (login, logout, sessions, hashed passwords) with
-  role-based access control.
-- Three roles: **Admin**, **Teacher**, and **Student** (Django users and groups).
-- Courses with an assigned teacher, ordered lessons, and student enrollments.
-- Role-based dashboards for each role.
-- Server-side permissions and published-content visibility: students see
-  published lessons only, while teachers and admins see all lessons in the
-  courses they own or administer.
-- Public JSON API: `GET /api/courses/` lists published courses.
-- Idempotent, fictional demo-data seeding (safe to re-run).
-- Docker Compose local setup with SQLite and a named volume.
-- One-command launchers for Linux/macOS (`start.sh`) and Windows PowerShell
-  (`start.ps1`).
-- Automated tests and GitHub Actions CI.
-- Public homepage with a course catalog, responsive layout, and original CSS
-  (no framework or CDN).
-
-## Demo Architecture
-
-This is the architecture of the **public demo** only. It is not the production
-architecture of Automationsguiden.
-
-```mermaid
-flowchart TD
-    Browser["Local browser<br/>http://127.0.0.1:8000"] -->|HTTP| Django
-
-    subgraph Compose["Docker Compose — local demo stack"]
-        Django["Django application<br/>views, templates, admin"]
-        Django --> Auth["Authentication and role permissions<br/>Admin / Teacher / Student"]
-        Django --> DB[("SQLite database<br/>named volume: demo_data")]
-    end
-
-    CI["GitHub Actions CI<br/>check, tests, migration check"] -.->|validates on push / PR| Django
-```
-
-Stack: Django 5.2, SQLite, server-rendered templates. No JavaScript build step.
-
-### Project layout
-
-```
-config/       Django settings, URLconf, WSGI
-courses/      models, roles, permissions, views, urls, admin, tests
-  templates/  server-rendered HTML
-  static/     original CSS
-  management/commands/seed_demo.py
-compose.yaml  local SQLite stack with a named volume
-Dockerfile    python:3.12-slim local image
-start.sh      one-command launcher (Linux/macOS)
-start.ps1     one-command launcher (Windows PowerShell)
-tests/        launcher tests
-.github/      GitHub Actions CI
-```
-
-### Roles
-
-| Role | Access |
-| --- | --- |
-| Admin | Full Django admin; opens every course and all lessons (including drafts). |
-| Teacher | Courses assigned to them; sees all lessons in those courses. |
-| Student | Enrolled courses; sees published lessons only. |
-| Anonymous | Homepage and API only; other pages redirect to login. |
-
-## Local development without Docker
+### Run without Docker (local development)
 
 ```bash
 python3 -m venv .venv
@@ -191,115 +98,125 @@ python manage.py seed_demo
 DJANGO_DEBUG=true python manage.py runserver
 ```
 
-`DJANGO_DEBUG=true` is needed here so Django serves the static files during local
-development, since the default is `DEBUG=false`.
+`DJANGO_DEBUG=true` is only needed here so Django serves static files during
+local development; the default is `DEBUG=false`.
 
-## Tests
+## Demo features and test accounts
 
-```bash
-python manage.py check
-python manage.py test
-python manage.py makemigrations --check --dry-run
-sh tests/launcher_test.sh
+- Django authentication (login, logout, sessions, hashed passwords) with
+  role-based access control and three roles: **Admin**, **Teacher**, **Student**.
+- Courses with an assigned teacher, ordered lessons, and student enrollments.
+- Role-based dashboards for each role.
+- Server-side permissions and published-content visibility: students see
+  published lessons only; teachers and admins see all lessons in the courses they
+  own or administer.
+- Public JSON API: `GET /api/courses/` lists published courses.
+- Idempotent, fictional demo-data seeding (safe to re-run).
+- Responsive homepage with a course catalog, using original CSS.
+
+Fictional local-only accounts (created by the seed command):
+
+| Role | Username | Password |
+| --- | --- | --- |
+| Admin | `demo_admin` | `demo-admin-pass` |
+| Teacher | `demo_teacher` | `demo-teacher-pass` |
+| Student | `demo_student` | `demo-student-pass` |
+
+Passwords are applied only **when the accounts are first created**; if you change
+one, the existing account keeps your new password. Never reuse these values
+outside local development.
+
+## CI/CD pipeline
+
+`.github/workflows/ci.yml` runs on every push and pull request on `ubuntu-24.04`,
+with `permissions: contents: read` and superseded runs cancelled automatically.
+It has three independent jobs:
+
+- **`test`** — install pinned dependencies, `manage.py check`, the Django test
+  suite, and `makemigrations --check --dry-run` to catch migration drift.
+- **`audit`** — run `pip-audit` over the pinned runtime dependencies to flag known
+  vulnerabilities.
+- **`docker`** — build the image, start it with Compose in a run-scoped project,
+  wait (bounded to 180s) for the container to become `healthy`, verify HTTP 200
+  from `/` and `/api/courses/`, confirm the Django process is **non-root**, check
+  the memory/CPU/PID limits, collect redacted diagnostics on failure, and always
+  tear down the CI-created resources.
+
+Dependencies and CI actions are updated by **Dependabot** (weekly, for both `pip`
+and `github-actions`).
+
+## Docker security and reliability controls
+
+- **Least-privilege runtime.** The entrypoint fixes volume ownership, then drops
+  to the unprivileged `app` user; Django runs as a **non-root** process. The
+  container uses `no-new-privileges` and drops all Linux capabilities except
+  `CHOWN`, `SETUID`, `SETGID`, which are needed only at startup.
+- **Healthcheck.** `compose.yaml` probes `http://127.0.0.1:8000/` with the Python
+  standard library (no `curl`/`wget`); the probe exercises the home view, so it
+  reflects the app and SQLite being reachable, not just a live process. A
+  healthcheck records status but does **not** restart a container by itself.
+- **Crash recovery.** `restart: "on-failure:5"` restarts a crashed container up to
+  five times, then stops rather than looping on a persistent misconfiguration.
+  A normal `docker compose down` is respected and not restarted.
+- **Graceful shutdown.** `init: true` runs a small init as PID 1 to forward
+  signals, and `stop_grace_period: 30s` allows in-flight SQLite writes to finish.
+- **Resource and log limits.** `mem_limit: 256m`, `cpus: "0.50"`, `pids_limit: 128`
+  bound a single container, and `json-file` logs are capped at `max-size: 10m`
+  with `max-file: 3` (~30 MB total).
+- **Secrets hygiene.** No secret is committed. `DJANGO_SECRET_KEY` is optional;
+  when unset, a strong key is generated on first run and persisted on the
+  `demo_data` volume (`/app/data/django_secret_key`) so sessions survive restarts.
+  `.env`, the generated key and databases are git-ignored; only `.env.example` is
+  committed. The launcher masks anything that looks like a password or secret key
+  in the logs it prints.
+
+## Limitations and scope
+
+- **Local demo, not production.** It uses Django's development server, SQLite,
+  and no HTTPS. It is not hardened for, or intended for, production deployment.
+- No self-service signup, password-reset email flow, or background workers.
+- One teacher per course; minimal templates with no frontend build tooling.
+- CI runs on Linux (`ubuntu-24.04`) and runs the Django test suite only. The
+  launcher suite (`sh tests/launcher_test.sh`, mocked Docker, run locally) covers
+  the Linux launcher; the PowerShell launcher is covered by a parser/self-test
+  check. Neither is a native Windows/macOS run.
+- No reuse license is granted at this stage.
+
+This repository is an **independent implementation** built for learning and
+portfolio purposes. Any commercial platform the author also works on is a
+**separate, private** codebase: its architecture, infrastructure and data are not
+included here, and nothing in this demo should be read as describing or
+validating that system.
+
+## Repository layout and commands
+
+```
+config/       Django settings, URLconf, WSGI
+courses/      models, roles, permissions, views, urls, admin, tests
+  templates/  server-rendered HTML
+  static/     original CSS
+  management/commands/seed_demo.py
+compose.yaml  local SQLite stack with a named volume
+Dockerfile    digest-pinned python:3.12-slim image
+docker-entrypoint.sh  privilege drop + startup
+start.sh      one-command launcher (Linux/macOS)
+start.ps1     one-command launcher (Windows PowerShell)
+tests/        launcher test suite (mocked Docker)
+.github/      CI workflow and Dependabot config
 ```
 
-Covers roles, authentication, login/logout, dashboards, lesson permissions,
-lesson visibility, the homepage, the API and idempotent seeding. The launcher
-tests use mocked Docker to check the start scripts without touching containers.
+Common commands:
 
-## CI
+```bash
+python manage.py check                         # Django system check
+python manage.py test                          # Django test suite
+python manage.py makemigrations --check --dry-run   # migration drift check
+sh tests/launcher_test.sh                      # launcher tests (mocked Docker)
+docker compose logs web                         # container logs
+```
 
-`.github/workflows/ci.yml` runs on every push and pull request: install
-dependencies, `check`, `test`, then `makemigrations --check --dry-run`.
-
-## Security notes
-
-- Local development demo: Django's development server, SQLite, no HTTPS.
-- The service is published on `127.0.0.1` only.
-- `DEBUG` defaults to **false**. Enable it only for local development by setting
-  `DJANGO_DEBUG=true` (in `.env` or on the command line).
-- No secret is committed. `DJANGO_SECRET_KEY` is optional; if unset, a strong key
-  is generated on first run and persisted on the `demo_data` volume
-  (`/app/data/django_secret_key`), so it survives restarts and is never printed
-  to the terminal. The `DEMO_*_PASSWORD` values are fictional placeholders for
-  local use — never reuse them in production.
-- The container runs as an unprivileged user with `no-new-privileges` and all
-  Linux capabilities dropped except the minimum needed to fix volume ownership
-  and drop privileges at startup.
-- `.env`, the generated secret key and databases are git-ignored; only
-  `.env.example` is committed.
-
-## Reliability and resource limits
-
-This is a local-only demo, not a production deployment; the settings below keep
-it recoverable and bounded on a single machine.
-
-- **Health states.** `compose.yaml` defines a `healthcheck` that probes
-  `http://127.0.0.1:8000/` with the Python standard library (no `curl`/`wget`).
-  `docker compose ps` shows `starting` → `healthy` (or `unhealthy`). The probe
-  exercises the home view, which reads from SQLite, so it reflects the app and
-  its database being reachable — not just a live process.
-- **Healthcheck does not restart containers.** Docker only records the health
-  status. An `unhealthy` container is **not** restarted automatically by a
-  healthcheck; restarting an unhealthy container would require extra tooling,
-  which this demo intentionally avoids.
-- **Crash restart behaviour.** The service uses `restart: "on-failure:5"`, so a
-  container that exits with an error is restarted up to 5 times (and gives up
-  rather than looping forever on a persistent misconfiguration). A normal
-  `docker compose stop` / `down` is respected and is not restarted.
-- **Graceful shutdown.** `init: true` runs a small init as PID 1 to forward
-  signals, and `stop_grace_period: 30s` gives the server time to finish
-  in-flight SQLite writes before Docker escalates to `SIGKILL`.
-- **Resource limits.** Each run is capped at `mem_limit: 256m`,
-  `cpus: "0.50"` and `pids_limit: 128` — conservative bounds for a single
-  Django + SQLite process that prevent one container from exhausting the host.
-- **Log rotation.** Container logs use the `json-file` driver with
-  `max-size: 10m` and `max-file: 3`, so logs are bounded to roughly 30 MB
-  instead of growing without limit. This does not change Docker daemon
-  (global) settings.
-
-## Troubleshooting
-
-When a step fails the launcher prints the failed step, the likely cause, an
-actionable next step, and the last 50 container log lines (with anything that
-looks like a password or secret key masked). Use that output first.
-
-- **`[ERROR]` at Docker CLI detection:** Docker is not installed. Install Docker
-  Desktop or Docker Engine + Compose v2, then rerun.
-- **`[ERROR]` at Docker Engine:** Docker is installed but not started. Start
-  Docker Desktop (or the Docker service) and rerun.
-- **`[ERROR]` at Compose v2 detection:** enable the `docker compose` v2 plugin.
-- **`[ERROR]` at image build / container start:** read the streamed build output
-  and the sanitized logs the launcher prints.
-- **`[ERROR]` at HTTP readiness:** the container started but did not answer in
-  time; wait and rerun, or check `docker compose logs web`.
-- **Port 8000 in use:** `start.sh` / `start.ps1` pick the next free port
-  automatically. To choose one yourself, set `HOST_PORT`, e.g.
-  `HOST_PORT=8001 ./start.sh` or `$env:HOST_PORT=8001; .\start.ps1`.
-- **Login fails:** the demo passwords only apply to newly created accounts. If a
-  password was changed, sign in with the new one, or set an admin password with
-  `python manage.py changepassword demo_admin`.
-- **`permission denied` with Docker on Linux:** make sure your user can run Docker.
-
-## Ongoing Engineering Improvements
-
-Ongoing areas of work in this demo. These are in progress, not completed
-certifications, audits, or verified production outcomes.
-
-- **Performance and maintainability** — keeping the code small and readable,
-  reducing duplication, and reviewing query and page performance.
-- **Security reviews and hardening** — reviewing authentication, permissions,
-  input handling, and dependency updates.
-- **Reliability and troubleshooting** — improving the launcher, error reporting,
-  and recovery paths.
-- **Deployment and automation** — refining Docker and CI workflows and exploring
-  simple, reproducible deployment options.
-
-## Limitations
-
-- Django development server, SQLite, no production hardening.
-- No self-service signup or password-reset email flow.
-- One teacher per course.
-- Minimal templates and no frontend build tooling, by design.
-
-No reuse license is granted at this stage.
+If a launcher step fails it prints the failed step, a likely cause, an actionable
+next step, and the last container log lines with secret-like values masked.
+Typical fixes: Docker not installed or not running; the Compose v2 plugin missing;
+port 8000 already in use (set `HOST_PORT`); or a login failing because a demo
+password was changed (`python manage.py changepassword demo_admin`).
