@@ -6,3 +6,11 @@
 __pycache__
 db.sqlite3
 *.sqlite3
+/tests
+/.github
+/start.sh
+/start.ps1
+/README.md
+/.gitignore
+/Dockerfile
+/compose.yaml
