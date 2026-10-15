@@ -3,6 +3,37 @@ services:
     build: .
     ports:
       - "127.0.0.1:${HOST_PORT:-8000}:8000"
+    # Restart crashed containers up to 5 times. This suits a local demo: it
+    # recovers from an unexpected crash without looping forever on a
+    # persistent misconfiguration. Note a healthcheck does NOT trigger a
+    # restart by itself; this policy reacts to process exit, not health.
+    restart: "on-failure:5"
+    # A tiny init (tini) as PID 1 reaps zombies and forwards signals so the
+    # stop signal reaches the unprivileged Django process for a clean shutdown.
+    init: true
+    # Give the dev server time to finish in-flight SQLite writes on stop
+    # before Docker escalates to SIGKILL.
+    stop_grace_period: 30s
+    # Liveness/readiness probe using only the Python standard library (no curl
+    # or wget). urlopen raises on connection errors and non-2xx responses, so
+    # the command exits non-zero when Django is not serving.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    # Conservative limits for a single-process local demo. They cap a runaway
+    # process without starving normal Django/SQLite startup and seeding.
+    mem_limit: 256m
+    cpus: "0.50"
+    pids_limit: 128
+    # Bound the json-file log growth so a long-running demo cannot fill the disk.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       # DEBUG defaults to false. For local development set DJANGO_DEBUG=true
       # (for example in .env or on the command line).

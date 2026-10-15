@@ -229,6 +229,35 @@ dependencies, `check`, `test`, then `makemigrations --check --dry-run`.
 - `.env`, the generated secret key and databases are git-ignored; only
   `.env.example` is committed.
 
+## Reliability and resource limits
+
+This is a local-only demo, not a production deployment; the settings below keep
+it recoverable and bounded on a single machine.
+
+- **Health states.** `compose.yaml` defines a `healthcheck` that probes
+  `http://127.0.0.1:8000/` with the Python standard library (no `curl`/`wget`).
+  `docker compose ps` shows `starting` → `healthy` (or `unhealthy`). The probe
+  exercises the home view, which reads from SQLite, so it reflects the app and
+  its database being reachable — not just a live process.
+- **Healthcheck does not restart containers.** Docker only records the health
+  status. An `unhealthy` container is **not** restarted automatically by a
+  healthcheck; restarting an unhealthy container would require extra tooling,
+  which this demo intentionally avoids.
+- **Crash restart behaviour.** The service uses `restart: "on-failure:5"`, so a
+  container that exits with an error is restarted up to 5 times (and gives up
+  rather than looping forever on a persistent misconfiguration). A normal
+  `docker compose stop` / `down` is respected and is not restarted.
+- **Graceful shutdown.** `init: true` runs a small init as PID 1 to forward
+  signals, and `stop_grace_period: 30s` gives the server time to finish
+  in-flight SQLite writes before Docker escalates to `SIGKILL`.
+- **Resource limits.** Each run is capped at `mem_limit: 256m`,
+  `cpus: "0.50"` and `pids_limit: 128` — conservative bounds for a single
+  Django + SQLite process that prevent one container from exhausting the host.
+- **Log rotation.** Container logs use the `json-file` driver with
+  `max-size: 10m` and `max-file: 3`, so logs are bounded to roughly 30 MB
+  instead of growing without limit. This does not change Docker daemon
+  (global) settings.
+
 ## Troubleshooting
 
 When a step fails the launcher prints the failed step, the likely cause, an
