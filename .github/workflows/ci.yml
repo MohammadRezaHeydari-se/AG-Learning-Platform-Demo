@@ -104,7 +104,22 @@ jobs:
       - name: Verify the Django process is non-root
         run: |
           set -euo pipefail
-          uid=$(docker compose exec -T web sh -c 'for d in /proc/[0-9]*; do if tr "\0" " " < "$d/cmdline" 2>/dev/null | grep -q runserver; then awk "/^Uid:/ {print \$2; exit}" "$d/status"; break; fi; done')
+          uid=$(docker compose exec -T web sh -c '
+          uid=
+          for d in /proc/[0-9]*; do
+            [ -r "$d/cmdline" ] || continue
+            comm=$(cat "$d/comm" 2>/dev/null) || continue
+            case "$comm" in
+              python*) ;;
+              *) continue ;;
+            esac
+            if tr "\0" " " < "$d/cmdline" 2>/dev/null | grep -q "manage.py runserver"; then
+              uid=$(awk "/^Uid:/ {print \$2; exit}" "$d/status")
+              break
+            fi
+          done
+          printf "%s" "$uid"
+          ')
           echo "Django runserver UID: ${uid}"
           if [ -z "$uid" ] || [ "$uid" = "0" ]; then
             echo "::error::Expected the Django process to run as a non-root user."
